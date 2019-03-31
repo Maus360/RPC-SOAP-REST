@@ -1,0 +1,31 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+black = "*"
+pylint = "*"
+pyside = "*"
+
+[packages]
+thrift = "*"
+pyyaml = "*"
+sqlalchemy = "*"
+psycopg2 = "*"
+gobject = "*"
+pyqt5 = "*"
+spyne = "*"
+lxml = "*"
+zeep = "*"
+gunicorn = "*"
+mock = "*"
+pyside = "*"
+pyside2 = "*"
+supertools = "*"
+
+[requires]
+python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true
