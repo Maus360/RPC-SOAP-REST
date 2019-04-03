@@ -20,8 +20,6 @@ lxml = "*"
 zeep = "*"
 gunicorn = "*"
 mock = "*"
-pyside = "*"
-pyside2 = "*"
 supertools = "*"
 
 [requires]
