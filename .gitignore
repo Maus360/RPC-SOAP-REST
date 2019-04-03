@@ -1,0 +1,7 @@
+soap/log/out.log
+tutorial/log/out.log
+.vscode/launch.json
+.vscode/settings.json
+tutorial/__pycache__/
+tutorial/config/__pycache__/
+client/__pycache__/
