@@ -14,6 +14,7 @@ class App(QWidget):
         self.client_rpc = client_rpc
         self.client_soap = client_soap.service
         self.transport = transport
+        self.subject = None
         self.title = "Have a nice day!"
         self.left = 10
         self.top = 10
@@ -44,13 +45,27 @@ class App(QWidget):
         self.button_mo.clicked.connect(self.__get_mo_all)
         self.button_protocol = QPushButton("RPC->SOAP", self)
         self.button_protocol.clicked.connect(self.__change_protocol)
+        self.button_search = QPushButton("🔍")
+        self.button_search.clicked.connect(self.__search)
+        self.textarea_search = QLineEdit()
         self.h_box = QGroupBox()
         layout = QHBoxLayout()
         layout.addWidget(self.button_classes)
         layout.addWidget(self.button_mo)
         layout.addWidget(self.button_types)
         layout.addWidget(self.button_protocol)
+        layout.addWidget(self.textarea_search)
+        layout.addWidget(self.button_search)
         self.h_box.setLayout(layout)
+
+    def __search(self):
+        funcs = {
+            None: self.__get_types_all,
+            "type": self.__get_types_all,
+            "mo": self.__get_mo_all,
+            "class": self.__get_class_all,
+        }
+        funcs[self.subject](search=self.textarea_search.text())
 
     def __change_protocol(self):
         if self.client == self.client_rpc:
@@ -60,13 +75,13 @@ class App(QWidget):
             self.button_protocol.setText("RPC->SOAP")
             self.client = self.client_rpc
 
-    def __get_types_all(self):
+    def __get_types_all(self, search=None):
+        self.subject = "type"
         self.tableWidget.setColumnCount(0)
         self.tableWidget.setRowCount(0)
         self.transport.open()
         result = self.client.get_type_all()
         self.transport.close()
-        self.tableWidget.setRowCount(len(result))
         self.tableWidget.setColumnCount(8)
         self.tableWidget.setHorizontalHeaderLabels(
             [
@@ -80,7 +95,15 @@ class App(QWidget):
                 # "Delete",
             ]
         )
+        if search:
+            result = [
+                record
+                for record in result
+                if any([search in str(string) for string in vars(record).values()])
+            ]
+
         for index, record in enumerate(result):
+            self.tableWidget.insertRow(index)
             self.tableWidget.setItem(index, 0, QTableWidgetItem(record.name))
             self.tableWidget.setItem(index, 1, QTableWidgetItem(record.min_value))
             self.tableWidget.setItem(index, 2, QTableWidgetItem(record.max_value))
@@ -138,13 +161,13 @@ class App(QWidget):
         self.tableWidget.move(0, 0)
         self.window_layout.addWidget(self.tableWidget)
 
-    def __get_class_all(self):
+    def __get_class_all(self, search: str = None):
+        self.subject = "class"
         self.tableWidget.setColumnCount(0)
         self.tableWidget.setRowCount(0)
         self.transport.open()
         result = self.client.get_class_all()
         self.transport.close()
-        self.tableWidget.setRowCount(len(result))
         self.tableWidget.setColumnCount(5)
         self.tableWidget.setHorizontalHeaderLabels(
             [
@@ -154,7 +177,14 @@ class App(QWidget):
                 # , "Edit", "Delete"
             ]
         )
+        if search:
+            result = [
+                record
+                for record in result
+                if any([search in str(string) for string in vars(record).values()])
+            ]
         for index, record in enumerate(result):
+            self.tableWidget.insertRow(index)
             self.tableWidget.setItem(index, 0, QTableWidgetItem(record.name))
             self.tableWidget.setItem(
                 index, 1, QTableWidgetItem(str(record.num_of_methods))
@@ -205,13 +235,13 @@ class App(QWidget):
         self.tableWidget.move(0, 0)
         self.window_layout.addWidget(self.tableWidget)
 
-    def __get_mo_all(self):
+    def __get_mo_all(self, search: str = None):
+        self.subject = "mo"
         self.tableWidget.setColumnCount(0)
         self.tableWidget.setRowCount(0)
         self.transport.open()
         result = self.client.get_math_operations_all()
         self.transport.close()
-        self.tableWidget.setRowCount(len(result))
         self.tableWidget.setColumnCount(6)
         self.tableWidget.setHorizontalHeaderLabels(
             [
@@ -223,7 +253,14 @@ class App(QWidget):
                 # "Delete",
             ]
         )
+        if search:
+            result = [
+                record
+                for record in result
+                if any([search in str(string) for string in vars(record).values()])
+            ]
         for index, record in enumerate(result):
+            self.tableWidget.insertRow(index)
             self.tableWidget.setItem(index, 0, QTableWidgetItem(record.name))
             self.tableWidget.setItem(
                 index, 1, QTableWidgetItem(record.type_of_argument)
