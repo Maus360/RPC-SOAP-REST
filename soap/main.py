@@ -112,7 +112,7 @@ class HelloWorldService(ServiceBase):
         - iid
         """
         logger.info(f"Called method get_math_operation with parameters: iid={iid}")
-        database.get_math_operation(iid)
+        result = database.get_math_operation(iid)
         if result is None:
             # return InvalidID(iid, "There are no match result for requested id")
             return None
@@ -193,6 +193,7 @@ class HelloWorldService(ServiceBase):
         Parameters:
         - iid
         """
+        result = database.get_type(iid)
         logger.info(f"Called method get_type with parameters: iid={iid}")
         database.get_type(iid)
         if result is None:
