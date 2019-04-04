@@ -1,4 +1,5 @@
 import sys
+import logging
 from functools import partial
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -20,12 +21,65 @@ class App(QWidget):
         self.top = 10
         self.width = 640
         self.height = 480
+        self.funcs = {
+            "type": {
+                "fields": [
+                    "Name",
+                    "Min value",
+                    "Max value",
+                    "Format",
+                    "Size",
+                    "Description",
+                ],
+                "index": self.client.get_type_all,
+                "get": self.client.get_type,
+                "set": self.client.set_type,
+                "reset": self.client.reset_type,
+                "delete": self.client.delete_type,
+                "result": lambda record: [
+                    record.name,
+                    record.min_value,
+                    record.max_value,
+                    record.format_of_value,
+                    str(record.size),
+                    record.description,
+                ],
+            },
+            "class": {
+                "fields": ["Name", "Number of methods", "Number of Properties"],
+                "index": self.client.get_class_all,
+                "get": self.client.get_class,
+                "set": self.client.set_class,
+                "reset": self.client.reset_class,
+                "delete": self.client.delete_class,
+                "result": lambda record: [
+                    record.name,
+                    str(record.num_of_methods),
+                    str(record.num_of_fields),
+                ],
+            },
+            "mo": {
+                "fields": ["Name", "Type of argument", "Type of value", "Description"],
+                "index": self.client.get_math_operations_all,
+                "get": self.client.get_math_operation,
+                "set": self.client.set_math_operation,
+                "reset": self.client.reset_math_operation,
+                "delete": self.client.delete_math_operation,
+                "result": lambda record: [
+                    record.name,
+                    record.type_of_argument,
+                    record.type_of_value,
+                    record.description,
+                ],
+            },
+        }
         self.initUI()
 
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.window_layout = QVBoxLayout()
+        self.scroll = QScrollArea()
         self.header()
         self.window_layout.addWidget(self.h_box)
         self.setLayout(self.window_layout)
@@ -38,11 +92,11 @@ class App(QWidget):
 
     def header(self):
         self.button_types = QPushButton("Types", self)
-        self.button_types.clicked.connect(self.__get_types_all)
+        self.button_types.clicked.connect(partial(self.__get_record_all, "type"))
         self.button_classes = QPushButton("Classes", self)
-        self.button_classes.clicked.connect(self.__get_class_all)
+        self.button_classes.clicked.connect(partial(self.__get_record_all, "class"))
         self.button_mo = QPushButton("Math operations", self)
-        self.button_mo.clicked.connect(self.__get_mo_all)
+        self.button_mo.clicked.connect(partial(self.__get_record_all, "mo"))
         self.button_protocol = QPushButton("RPC->SOAP", self)
         self.button_protocol.clicked.connect(self.__change_protocol)
         self.button_search = QPushButton("🔍")
@@ -60,10 +114,10 @@ class App(QWidget):
 
     def __search(self):
         funcs = {
-            None: self.__get_types_all,
-            "type": self.__get_types_all,
-            "mo": self.__get_mo_all,
-            "class": self.__get_class_all,
+            None: partial(self.__get_record_all, "type"),
+            "type": partial(self.__get_record_all, "type"),
+            "mo": partial(self.__get_record_all, "mo"),
+            "class": partial(self.__get_record_all, "class"),
         }
         funcs[self.subject](search=self.textarea_search.text())
 
@@ -75,243 +129,69 @@ class App(QWidget):
             self.button_protocol.setText("RPC->SOAP")
             self.client = self.client_rpc
 
-    def __get_types_all(self, search=None):
-        self.subject = "type"
+    def __get_record_all(self, name: str, search=None):
+        self.window_layout.removeWidget(self.tableWidget)
+        self.tableWidget = QTableWidget()
+        logger.debug(f"get_record_all of {name}")
+        self.subject = name
+        self.window_layout.removeWidget(self.scroll)
         self.tableWidget.setColumnCount(0)
         self.tableWidget.setRowCount(0)
         self.transport.open()
-        result = self.client.get_type_all()
+        result = self.funcs[name]["index"]()
         self.transport.close()
-        self.tableWidget.setColumnCount(8)
-        self.tableWidget.setHorizontalHeaderLabels(
-            [
-                "Name",
-                "Min value",
-                "Max value",
-                "Format",
-                "Size",
-                "Description",
-                # "Edit",
-                # "Delete",
-            ]
-        )
+        self.tableWidget.setColumnCount(len(self.funcs[name]["fields"]) + 1)
+        self.tableWidget.setHorizontalHeaderLabels(self.funcs[name]["fields"])
         if search:
+            logger.debug(f"Change result query by search {search}")
             result = [
                 record
                 for record in result
                 if any([search in str(string) for string in vars(record).values()])
             ]
-
+        logger.debug("generate table")
         for index, record in enumerate(result):
+            logger.debug(f"set {index} record of values {record}")
+            result = self.funcs[name]["result"](record)
             self.tableWidget.insertRow(index)
-            self.tableWidget.setItem(index, 0, QTableWidgetItem(record.name))
-            self.tableWidget.setItem(index, 1, QTableWidgetItem(record.min_value))
-            self.tableWidget.setItem(index, 2, QTableWidgetItem(record.max_value))
-            self.tableWidget.setItem(index, 3, QTableWidgetItem(record.format_of_value))
-            self.tableWidget.setItem(index, 4, QTableWidgetItem(str(record.size)))
-            self.tableWidget.setItem(index, 5, QTableWidgetItem(record.description))
-
-            edit_button = QPushButton("Change")
-            edit_button.clicked.connect(
-                partial(
-                    self.__edit_record,
-                    "type",
-                    record.id,
-                    self.tableWidget.item(index, 0),
-                    self.tableWidget.item(index, 1),
-                    self.tableWidget.item(index, 2),
-                    self.tableWidget.item(index, 3),
-                    self.tableWidget.item(index, 4),
-                    self.tableWidget.item(index, 5),
-                )
+            for i in range(len(self.funcs[name]["fields"])):
+                self.tableWidget.setItem(index, i, QTableWidgetItem(result[i]))
+            # self.tableWidget.setItem(index, 1, QTableWidgetItem(record.min_value))
+            # self.tableWidget.setItem(index, 2, QTableWidgetItem(record.max_value))
+            # self.tableWidget.setItem(index, 3, QTableWidgetItem(record.format_of_value))
+            # self.tableWidget.setItem(index, 4, QTableWidgetItem(str(record.size)))
+            # self.tableWidget.setItem(index, 5, QTableWidgetItem(record.description))
+            button_view = QPushButton("View")
+            button_view.clicked.connect(partial(self.__get_record, name, record.id))
+            self.tableWidget.setCellWidget(
+                index, len(self.funcs[name]["fields"]), button_view
             )
-            delete_button = QPushButton("Delete")
-            delete_button.clicked.connect(
-                partial(self.__delete_record, "type", record.id)
-            )
-            self.tableWidget.setCellWidget(index, 6, edit_button)
-            self.tableWidget.setCellWidget(index, 7, delete_button)
-
-        self.tableWidget.insertRow(len(result))
-        self.tableWidget.setItem(len(result), 0, QTableWidgetItem("Enter name"))
-        self.tableWidget.setItem(len(result), 1, QTableWidgetItem("Enter min value"))
-        self.tableWidget.setItem(len(result), 2, QTableWidgetItem("Enter max value"))
-        self.tableWidget.setItem(
-            len(result), 3, QTableWidgetItem("Enter format of value")
-        )
-        self.tableWidget.setItem(len(result), 4, QTableWidgetItem("Enter size"))
-        self.tableWidget.setItem(len(result), 5, QTableWidgetItem("Enter decription"))
-        new_button = QPushButton("New")
-        new_button.clicked.connect(
-            partial(
-                self.__new_record,
-                "type",
-                self.tableWidget.item(len(result), 0),
-                self.tableWidget.item(len(result), 1),
-                self.tableWidget.item(len(result), 2),
-                self.tableWidget.item(len(result), 3),
-                self.tableWidget.item(len(result), 4),
-                self.tableWidget.item(len(result), 5),
-            )
-        )
-
-        self.tableWidget.setCellWidget(len(result), 6, new_button)
 
         self.tableWidget.resizeColumnsToContents()
         self.tableWidget.move(0, 0)
+        self.window_layout.removeWidget(self.scroll)
         self.window_layout.addWidget(self.tableWidget)
 
-    def __get_class_all(self, search: str = None):
-        self.subject = "class"
-        self.tableWidget.setColumnCount(0)
-        self.tableWidget.setRowCount(0)
+    def __get_record(self, name, iid):
         self.transport.open()
-        result = self.client.get_class_all()
+        result = self.funcs[name]["get"](iid)
         self.transport.close()
-        self.tableWidget.setColumnCount(5)
-        self.tableWidget.setHorizontalHeaderLabels(
-            [
-                "Name",
-                "Number of methods",
-                "Number of Properties"
-                # , "Edit", "Delete"
-            ]
-        )
-        if search:
-            result = [
-                record
-                for record in result
-                if any([search in str(string) for string in vars(record).values()])
-            ]
-        for index, record in enumerate(result):
-            self.tableWidget.insertRow(index)
-            self.tableWidget.setItem(index, 0, QTableWidgetItem(record.name))
-            self.tableWidget.setItem(
-                index, 1, QTableWidgetItem(str(record.num_of_methods))
-            )
-            self.tableWidget.setItem(
-                index, 2, QTableWidgetItem(str(record.num_of_fields))
-            )
-            edit_button = QPushButton("Change")
-            edit_button.clicked.connect(
-                partial(
-                    self.__edit_record,
-                    "class",
-                    record.id,
-                    self.tableWidget.item(index, 0),
-                    self.tableWidget.item(index, 1),
-                    self.tableWidget.item(index, 2),
-                )
-            )
-            delete_button = QPushButton("Delete")
-            delete_button.clicked.connect(
-                partial(self.__delete_record, "class", record.id)
-            )
-            self.tableWidget.setCellWidget(index, 3, edit_button)
-            self.tableWidget.setCellWidget(index, 4, delete_button)
+        layout = QVBoxLayout()
+        fields = []
+        for index, field in enumerate(self.funcs[name]["fields"]):
+            fields.append(QTextEdit(str(self.funcs[name]["result"](result)[index])))
+            layout.addWidget(QLabel(field))
+            fields[-1].setReadOnly(True)
+            layout.addWidget(fields[-1])
 
-        self.tableWidget.insertRow(len(result))
-        self.tableWidget.setItem(len(result), 0, QTableWidgetItem("Enter name"))
-        self.tableWidget.setItem(
-            len(result), 1, QTableWidgetItem("Enter number of methods")
-        )
-        self.tableWidget.setItem(
-            len(result), 2, QTableWidgetItem("Enter number of properties")
-        )
-        new_button = QPushButton("New")
-        new_button.clicked.connect(
-            partial(
-                self.__new_record,
-                "class",
-                self.tableWidget.item(len(result), 0),
-                self.tableWidget.item(len(result), 1),
-                self.tableWidget.item(len(result), 2),
-            )
-        )
-
-        self.tableWidget.setCellWidget(len(result), 3, new_button)
-
-        self.tableWidget.resizeColumnsToContents()
-        self.tableWidget.move(0, 0)
-        self.window_layout.addWidget(self.tableWidget)
-
-    def __get_mo_all(self, search: str = None):
-        self.subject = "mo"
-        self.tableWidget.setColumnCount(0)
-        self.tableWidget.setRowCount(0)
-        self.transport.open()
-        result = self.client.get_math_operations_all()
-        self.transport.close()
-        self.tableWidget.setColumnCount(6)
-        self.tableWidget.setHorizontalHeaderLabels(
-            [
-                "Name",
-                "Type of argument",
-                "Type of value",
-                "Description",
-                # "Edit",
-                # "Delete",
-            ]
-        )
-        if search:
-            result = [
-                record
-                for record in result
-                if any([search in str(string) for string in vars(record).values()])
-            ]
-        for index, record in enumerate(result):
-            self.tableWidget.insertRow(index)
-            self.tableWidget.setItem(index, 0, QTableWidgetItem(record.name))
-            self.tableWidget.setItem(
-                index, 1, QTableWidgetItem(record.type_of_argument)
-            )
-            self.tableWidget.setItem(index, 2, QTableWidgetItem(record.type_of_value))
-            self.tableWidget.setItem(index, 3, QTableWidgetItem(record.description))
-            edit_button = QPushButton("Change")
-            edit_button.clicked.connect(
-                partial(
-                    self.__edit_record,
-                    "mo",
-                    record.id,
-                    self.tableWidget.item(index, 0),
-                    self.tableWidget.item(index, 1),
-                    self.tableWidget.item(index, 2),
-                    self.tableWidget.item(index, 3),
-                )
-            )
-            delete_button = QPushButton("Delete")
-            delete_button.clicked.connect(
-                partial(self.__delete_record, "mo", record.id)
-            )
-            self.tableWidget.setCellWidget(index, 4, edit_button)
-            self.tableWidget.setCellWidget(index, 5, delete_button)
-
-        self.tableWidget.insertRow(len(result))
-        self.tableWidget.setItem(len(result), 0, QTableWidgetItem("Enter name"))
-        self.tableWidget.setItem(
-            len(result), 1, QTableWidgetItem("Enter type of argument")
-        )
-        self.tableWidget.setItem(
-            len(result), 2, QTableWidgetItem("Enter type of value")
-        )
-        self.tableWidget.setItem(len(result), 3, QTableWidgetItem("Enter description"))
-        new_button = QPushButton("New")
-        new_button.clicked.connect(
-            partial(
-                self.__new_record,
-                "mo",
-                self.tableWidget.item(len(result), 0),
-                self.tableWidget.item(len(result), 1),
-                self.tableWidget.item(len(result), 2),
-                self.tableWidget.item(len(result), 3),
-            )
-        )
-
-        self.tableWidget.setCellWidget(len(result), 4, new_button)
-
-        self.tableWidget.resizeColumnsToContents()
-        self.tableWidget.move(0, 0)
-        self.window_layout.addWidget(self.tableWidget)
+        record_layout = QGroupBox()
+        record_layout.setLayout(layout)
+        self.scroll = QScrollArea()
+        self.scroll.setWidget(record_layout)
+        self.scroll.setWidgetResizable(True)
+        self.window_layout.removeWidget(self.tableWidget)
+        self.window_layout.addWidget(self.scroll)
+        print(name, iid)
 
     def __edit_record(self, name, iid, *argv):
         print("edit", name, iid, argv)
@@ -392,3 +272,11 @@ class App(QWidget):
 
 
 app = QApplication(sys.argv)
+
+logger = logging.getLogger("CLIENT")
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler = logging.FileHandler("/home/maus/bsuir/3/AiPOSiZI/rpc-soap/client/log/out.log")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
