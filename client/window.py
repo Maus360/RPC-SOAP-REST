@@ -99,6 +99,8 @@ class App(QWidget):
         self.button_mo.clicked.connect(partial(self.__get_record_all, "mo"))
         self.button_protocol = QPushButton("RPC->SOAP", self)
         self.button_protocol.clicked.connect(self.__change_protocol)
+        self.button_new = QPushButton("New")
+        self.button_new.clicked.connect(partial(self.__new_record, False, "type"))
         self.button_search = QPushButton("🔍")
         self.button_search.clicked.connect(self.__search)
         self.textarea_search = QLineEdit()
@@ -108,6 +110,7 @@ class App(QWidget):
         layout.addWidget(self.button_mo)
         layout.addWidget(self.button_types)
         layout.addWidget(self.button_protocol)
+        layout.addWidget(self.button_new)
         layout.addWidget(self.textarea_search)
         layout.addWidget(self.button_search)
         self.h_box.setLayout(layout)
@@ -130,6 +133,7 @@ class App(QWidget):
             self.client = self.client_rpc
 
     def __get_record_all(self, name: str, search=None):
+        self.window_layout.removeWidget(self.scroll)
         self.window_layout.removeWidget(self.tableWidget)
         self.tableWidget = QTableWidget()
         logger.debug(f"get_record_all of {name}")
@@ -141,7 +145,9 @@ class App(QWidget):
         result = self.funcs[name]["index"]()
         self.transport.close()
         self.tableWidget.setColumnCount(len(self.funcs[name]["fields"]) + 1)
-        self.tableWidget.setHorizontalHeaderLabels(self.funcs[name]["fields"])
+        self.tableWidget.setHorizontalHeaderLabels(
+            self.funcs[name]["fields"] + ["View"]
+        )
         if search:
             logger.debug(f"Change result query by search {search}")
             result = [
@@ -156,119 +162,171 @@ class App(QWidget):
             self.tableWidget.insertRow(index)
             for i in range(len(self.funcs[name]["fields"])):
                 self.tableWidget.setItem(index, i, QTableWidgetItem(result[i]))
-            # self.tableWidget.setItem(index, 1, QTableWidgetItem(record.min_value))
-            # self.tableWidget.setItem(index, 2, QTableWidgetItem(record.max_value))
-            # self.tableWidget.setItem(index, 3, QTableWidgetItem(record.format_of_value))
-            # self.tableWidget.setItem(index, 4, QTableWidgetItem(str(record.size)))
-            # self.tableWidget.setItem(index, 5, QTableWidgetItem(record.description))
             button_view = QPushButton("View")
             button_view.clicked.connect(partial(self.__get_record, name, record.id))
             self.tableWidget.setCellWidget(
                 index, len(self.funcs[name]["fields"]), button_view
             )
 
-        self.tableWidget.resizeColumnsToContents()
+        # self.tableWidget.resizeColumnsToContents()
         self.tableWidget.move(0, 0)
         self.window_layout.removeWidget(self.scroll)
         self.window_layout.addWidget(self.tableWidget)
 
     def __get_record(self, name, iid):
-        self.transport.open()
-        result = self.funcs[name]["get"](iid)
-        self.transport.close()
-        layout = QVBoxLayout()
-        fields = []
-        for index, field in enumerate(self.funcs[name]["fields"]):
-            fields.append(QTextEdit(str(self.funcs[name]["result"](result)[index])))
-            layout.addWidget(QLabel(field))
-            fields[-1].setReadOnly(True)
-            layout.addWidget(fields[-1])
-
-        record_layout = QGroupBox()
-        record_layout.setLayout(layout)
-        self.scroll = QScrollArea()
-        self.scroll.setWidget(record_layout)
-        self.scroll.setWidgetResizable(True)
-        self.window_layout.removeWidget(self.tableWidget)
-        self.window_layout.addWidget(self.scroll)
-        print(name, iid)
-
-    def __edit_record(self, name, iid, *argv):
-        print("edit", name, iid, argv)
-        funcs = {
-            "type": [
-                self.client.reset_type,
-                self.__get_types_all,
-                [str, str, str, str, int, str],
-            ],
-            "mo": [
-                self.client.reset_math_operation,
-                self.__get_mo_all,
-                [str, str, str, str],
-            ],
-            "class": [self.client.reset_class, self.__get_class_all, [str, int, int]],
-        }
-        print(name)
+        self.window_layout.removeWidget(self.scroll)
         try:
-            argv = [
-                funcs[name][2][index](i.text()) for index, i in enumerate(argv[:-1])
-            ]
             self.transport.open()
-            print(argv)
-            funcs[name][0](iid, *argv)
+            result = self.funcs[name]["get"](iid)
             self.transport.close()
-            funcs[name][1]()
-        except:
+            buttons = QHBoxLayout()
+            self.button_edit = QPushButton("Edit")
+            self.button_edit.clicked.connect(partial(self.__edit_record, name, iid))
+            buttons.addWidget(self.button_edit)
+            self.button_delete = QPushButton("Delete")
+            self.button_delete.clicked.connect(partial(self.__delete_record, name, iid))
+            buttons.addWidget(self.button_delete)
+            layout = QVBoxLayout()
+            self.fields = []
+
+            for index, field in enumerate(self.funcs[name]["fields"]):
+                self.fields.append(
+                    QTextEdit(str(self.funcs[name]["result"](result)[index]))
+                )
+                layout.addWidget(QLabel(field))
+                self.fields[-1].setReadOnly(True)
+                layout.addWidget(self.fields[-1])
+
+            lay = QVBoxLayout()
+            lay.addLayout(buttons)
+            lay.addLayout(layout)
+            record_layout = QGroupBox()
+            record_layout.setLayout(lay)
+            self.scroll = QScrollArea()
+            self.scroll.setWidget(record_layout)
+            self.scroll.setWidgetResizable(True)
+            self.window_layout.removeWidget(self.tableWidget)
+            self.window_layout.addWidget(self.scroll)
+            print(name, iid)
+        except Exception as e:
+            logger.error(e)
+            self.transport.close()
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
             msg.setText("Error")
-            msg.setInformativeText("You enter invalid type of value")
+            msg.setInformativeText("No such record, may it already deleted")
             msg.setWindowTitle("Error!")
             msg.exec_()
+            self.__get_record_all(name)
+
+    def __edit_record(self, name, iid, submit=False):
+        funcs = {
+            "type": [self.client.reset_type, [str, str, str, str, int, str]],
+            "mo": [self.client.reset_math_operation, [str, str, str, str]],
+            "class": [self.client.reset_class, [str, int, int]],
+        }
+        if submit == True:
+            # print([(index, i.toPlainText()) for index, i in enumerate(self.fields)])
+            [field.setReadOnly(True) for field in self.fields]
+            try:
+                argv = [
+                    funcs[name][1][index](i.toPlainText())
+                    for index, i in enumerate(self.fields)
+                ]
+                self.transport.open()
+                funcs[name][0](iid, *argv)
+                self.transport.close()
+                self.__get_record_all(name)
+            except Exception as e:
+                logger.error(e)
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setText("Error")
+                msg.setInformativeText("You enter invalid type of value")
+                msg.setWindowTitle("Error!")
+                msg.exec_()
+                self.__get_record(name, iid)
+        else:
+            [field.setReadOnly(False) for field in self.fields]
+            self.button_edit.setText("Submit")
+            self.button_edit.clicked.connect(
+                partial(self.__edit_record, name, iid, True)
+            )
 
     def __delete_record(self, name, iid):
         funcs = {
-            "type": [self.client.delete_type, self.__get_types_all],
-            "mo": [self.client.delete_math_operation, self.__get_mo_all],
-            "class": [self.client.delete_class, self.__get_class_all],
+            "type": self.client.delete_type,
+            "mo": self.client.delete_math_operation,
+            "class": self.client.delete_class,
         }
         self.transport.open()
-        funcs[name][0](iid)
+        funcs[name](iid)
         print("delete", name, iid)
         self.transport.close()
-        funcs[name][1]()
+        self.__get_record_all(name)
 
-    def __new_record(self, name, *argv):
+    def __new_record(self, submit, name, *args):
         funcs = {
-            "type": [
-                self.client.set_type,
-                self.__get_types_all,
-                [str, str, str, str, int, str],
-            ],
-            "mo": [
-                self.client.set_math_operation,
-                self.__get_mo_all,
-                [str, str, str, str],
-            ],
-            "class": [self.client.set_class, self.__get_class_all, [str, int, int]],
+            "type": [self.client.set_type, [str, str, str, str, int, str]],
+            "mo": [self.client.set_math_operation, [str, str, str, str]],
+            "class": [self.client.set_class, [str, int, int]],
         }
-        print(name)
-        try:
-            argv = [
-                funcs[name][2][index](i.text()) for index, i in enumerate(argv[:-1])
-            ]
-            self.transport.open()
-            print(argv)
-            funcs[name][0](*argv)
-            self.transport.close()
-            funcs[name][1]()
-        except:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Error")
-            msg.setInformativeText("You enter invalid type of value")
-            msg.setWindowTitle("Error!")
-            msg.exec_()
+        self.window_layout.removeWidget(self.scroll)
+        self.window_layout.removeWidget(self.tableWidget)
+        if submit:
+            try:
+                argv = [
+                    funcs[name][1][index](i.toPlainText())
+                    for index, i in enumerate(self.fields)
+                ]
+                self.transport.open()
+                print(argv)
+                funcs[name][0](*argv)
+                self.transport.close()
+                self.__get_record_all(name)
+            except Exception as e:
+                logger.error(e)
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setText("Error")
+                msg.setInformativeText("You enter invalid type of value")
+                msg.setWindowTitle("Error!")
+                msg.exec_()
+        else:
+            print(name)
+            self.fields = []
+            buttons = QHBoxLayout()
+            button_submit = QPushButton("Submit")
+            button_submit.clicked.connect(lambda *args: self.__new_record(True, name))
+            button_tag = QComboBox()
+            button_tag.addItems([key.capitalize() for key in self.funcs.keys()])
+
+            button_tag.currentIndexChanged.connect(
+                lambda *args: self.__new_record(
+                    False, str(button_tag.itemText(args[0])).lower()
+                )
+            )
+            buttons.addWidget(button_tag)
+            buttons.addWidget(button_submit)
+            layout = QVBoxLayout()
+            if name is False:
+                name = str(button_tag.currentText()).lower()
+
+            for index, field in enumerate(self.funcs[name]["fields"]):
+                self.fields.append(QTextEdit())
+                layout.addWidget(QLabel(field))
+                layout.addWidget(self.fields[-1])
+
+            lay = QVBoxLayout()
+            lay.addLayout(buttons)
+            lay.addLayout(layout)
+            record_layout = QGroupBox()
+            record_layout.setLayout(lay)
+            self.scroll = QScrollArea()
+            self.scroll.setWidget(record_layout)
+            self.scroll.setWidgetResizable(True)
+            self.window_layout.removeWidget(self.tableWidget)
+            self.window_layout.addWidget(self.scroll)
 
 
 app = QApplication(sys.argv)
