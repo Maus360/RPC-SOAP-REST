@@ -46,7 +46,7 @@ class Iface:
         self.logger.info(f"Match {len(match)} records")
         if match is []:
             return InvalidID(0, "There are no match records")
-        result = [ThClass(record["name"], record["number_of_methods"], record["number_of_properties"], record["id"]) for record in match]
+        result = [ThClass(record["name"], record["num_of_methods"], record["num_of_fields"], record["id"]) for record in match]
         return result
   
     def get_class(self, iid):
@@ -58,7 +58,7 @@ class Iface:
         match = self.database.get_class(iid)
         if match is None:
             return InvalidID(iid, "There are no match result for requested id")
-        return ThClass(match['name'], match['number_of_methods'], match['number_of_properties'], match['id'])
+        return ThClass(match['name'], match['num_of_methods'], match['num_of_fields'], match['id'])
 
     def set_class(self, name, num_of_methods, num_of_fields):
         """
@@ -69,7 +69,7 @@ class Iface:
         """
         self.logger.info(
                 f"Called method set_class with parameters: name={name},"
-                + f"num_of_methods={num_of_methods}, num_of_properties={num_of_fields}"
+                + f"num_of_methods={num_of_methods}, num_of_fields={num_of_fields}"
             )
         self.database.set_class(name, num_of_methods, num_of_fields)
 
@@ -83,7 +83,7 @@ class Iface:
         """
         self.logger.info(
                 f"Called method reset_class with parameters: iid={iid}, name={name},"
-                + f"num_of_methods={num_of_methods}, num_of_properties={num_of_fields}"
+                + f"num_of_methods={num_of_methods}, num_of_fields={num_of_fields}"
             )
         self.database.reset_class(iid, name, num_of_methods, num_of_fields)
 
