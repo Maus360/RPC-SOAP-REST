@@ -57,7 +57,7 @@ class App(QWidget):
                     str(record.num_of_fields),
                 ],
             },
-            "mo": {
+            "math_operation": {
                 "fields": ["Name", "Type of argument", "Type of value", "Description"],
                 "index": client_rpc.get_math_operations_all,
                 "get": client_rpc.get_math_operation,
@@ -90,12 +90,20 @@ class App(QWidget):
         sys.exit(app.exec_())
 
     def header(self):
-        self.button_types = QPushButton("Types", self)
-        self.button_types.clicked.connect(partial(self.__get_record_all, "type"))
-        self.button_classes = QPushButton("Classes", self)
-        self.button_classes.clicked.connect(partial(self.__get_record_all, "class"))
-        self.button_mo = QPushButton("Math operations", self)
-        self.button_mo.clicked.connect(partial(self.__get_record_all, "mo"))
+        self.resources = list(
+            [" ".join(key.split("_")).lower() for key in self.funcs.keys()]
+        )
+        self.button_resources = QComboBox()
+        self.button_resources.addItems(self.resources)
+        self.button_resources.currentIndexChanged.connect(
+            partial(self.__get_record_all, None)
+        )
+        # self.button_types = QPushButton("Types", self)
+        # self.button_types.clicked.connect(partial(self.__get_record_all, "type"))
+        # self.button_classes = QPushButton("Classes", self)
+        # self.button_classes.clicked.connect(partial(self.__get_record_all, "class"))
+        # self.button_mo = QPushButton("Math operations", self)
+        # self.button_mo.clicked.connect(partial(self.__get_record_all, "math_operation"))
         # self.button_protocol = QPushButton("RPC->SOAP", self)
         self.button_protocol = QComboBox()
         self.button_protocol.addItems(["RPC", "SOAP", "REST"])
@@ -108,9 +116,10 @@ class App(QWidget):
         self.textarea_search = QLineEdit()
         self.h_box = QGroupBox()
         layout = QHBoxLayout()
-        layout.addWidget(self.button_classes)
-        layout.addWidget(self.button_mo)
-        layout.addWidget(self.button_types)
+        layout.addWidget(self.button_resources)
+        # layout.addWidget(self.button_classes)
+        # layout.addWidget(self.button_mo)
+        # layout.addWidget(self.button_types)
         layout.addWidget(self.button_protocol)
         layout.addWidget(self.button_new)
         layout.addWidget(self.textarea_search)
@@ -121,7 +130,7 @@ class App(QWidget):
         funcs = {
             None: partial(self.__get_record_all, "type"),
             "type": partial(self.__get_record_all, "type"),
-            "mo": partial(self.__get_record_all, "mo"),
+            "math_operation": partial(self.__get_record_all, "math_operation"),
             "class": partial(self.__get_record_all, "class"),
         }
         funcs[self.subject](search=self.textarea_search.text())
@@ -169,7 +178,7 @@ class App(QWidget):
                     str(record.num_of_fields),
                 ],
             },
-            "mo": {
+            "math_operation": {
                 "fields": ["Name", "Type of argument", "Type of value", "Description"],
                 "index": self.clients[args[0]].get_math_operations_all,
                 "get": self.clients[args[0]].get_math_operation,
@@ -187,10 +196,11 @@ class App(QWidget):
 
         self.client = self.clients[args[0]]
 
-    def __get_record_all(self, name: str, search=None):
+    def __get_record_all(self, search=None):
         self.window_layout.removeWidget(self.scroll)
         self.window_layout.removeWidget(self.tableWidget)
         self.tableWidget = QTableWidget()
+        name = "_".join(self.button_resources.currentText().split(" ")).lower()
         logger.debug(f"get_record_all of {name}")
         self.subject = name
         self.window_layout.removeWidget(self.scroll)
@@ -271,7 +281,7 @@ class App(QWidget):
     def __edit_record(self, name, iid, submit=False):
         funcs = {
             "type": [self.client.reset_type, [str, str, str, str, int, str]],
-            "mo": [self.client.reset_math_operation, [str, str, str, str]],
+            "math_operation": [self.client.reset_math_operation, [str, str, str, str]],
             "class": [self.client.reset_class, [str, int, int]],
         }
         if submit == True:
@@ -302,7 +312,7 @@ class App(QWidget):
     def __delete_record(self, name, iid):
         funcs = {
             "type": self.client.delete_type,
-            "mo": self.client.delete_math_operation,
+            "math_operation": self.client.delete_math_operation,
             "class": self.client.delete_class,
         }
         funcs[name](iid)
@@ -312,7 +322,7 @@ class App(QWidget):
     def __new_record(self, submit, name, *args):
         funcs = {
             "type": [self.client.set_type, [str, str, str, str, int, str]],
-            "mo": [self.client.set_math_operation, [str, str, str, str]],
+            "math_operation": [self.client.set_math_operation, [str, str, str, str]],
             "class": [self.client.set_class, [str, int, int]],
         }
         self.window_layout.removeWidget(self.scroll)
