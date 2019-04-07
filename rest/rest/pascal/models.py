@@ -30,8 +30,8 @@ class DMathOperation(models.Model):
 class DClass(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=200)
-    number_of_methods = models.IntegerField()
-    number_of_properties = models.IntegerField()
+    num_of_methods = models.IntegerField()
+    num_of_fields = models.IntegerField()
 
     def __str__(self):
-        return f"<Class({self.name}, {self.number_of_methods}, {self.number_of_properties})>"
+        return f"<Class({self.name}, {self.num_of_methods}, {self.num_of_fields})>"

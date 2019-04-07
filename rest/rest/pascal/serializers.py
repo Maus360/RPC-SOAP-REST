@@ -14,17 +14,18 @@ class TypeSerializer(serializers.HyperlinkedModelSerializer):
             "format_of_value",
             "size",
             "description",
+            "id",
         )
 
 
 class MathOperationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DMathOperation
-        fields = ("name", "type_of_argument", "type_of_value", "description")
+        fields = ("name", "type_of_argument", "type_of_value", "description", "id")
 
 
 class ClassSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DClass
-        fields = ("name", "number_of_methods", "number_of_properties")
+        fields = ("name", "num_of_methods", "num_of_fields", "id")
 

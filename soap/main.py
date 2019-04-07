@@ -24,8 +24,8 @@ class HelloWorldService(ServiceBase):
         result = [
             ThClass(
                 record["name"],
-                record["number_of_methods"],
-                record["number_of_properties"],
+                record["num_of_methods"],
+                record["num_of_fields"],
                 record["id"],
             )
             for record in match
@@ -45,13 +45,13 @@ class HelloWorldService(ServiceBase):
             return None
         return ThClass(
             result["name"],
-            result["number_of_methods"],
-            result["number_of_properties"],
+            result["num_of_methods"],
+            result["num_of_fields"],
             result["id"],
         )
 
     @rpc(Unicode, Integer, Integer)
-    def set_class(ctx, name, num_of_methods, num_of_properties):
+    def set_class(ctx, name, num_of_methods, num_of_fields):
         """
         Parameters:
         - name
@@ -60,12 +60,12 @@ class HelloWorldService(ServiceBase):
         """
         logger.info(
             f"Called method set_class with parameters: name={name},"
-            + f"num_of_methods={num_of_methods}, num_of_properties={num_of_properties}"
+            + f"num_of_methods={num_of_methods}, num_of_fields={num_of_fields}"
         )
-        database.set_class(name, num_of_methods, num_of_properties)
+        database.set_class(name, num_of_methods, num_of_fields)
 
     @rpc(Integer, Unicode, Integer, Integer)
-    def reset_class(ctx, iid, name, num_of_methods, num_of_properties):
+    def reset_class(ctx, iid, name, num_of_methods, num_of_fields):
         """
         Parameters:
         - iid
@@ -75,9 +75,9 @@ class HelloWorldService(ServiceBase):
         """
         logger.info(
             f"Called method reset_class with parameters: iid={iid}, name={name},"
-            + f"num_of_methods={num_of_methods}, num_of_properties={num_of_properties}"
+            + f"num_of_methods={num_of_methods}, num_of_fields={num_of_fields}"
         )
-        database.reset_class(iid, name, num_of_methods, num_of_properties)
+        database.reset_class(iid, name, num_of_methods, num_of_fields)
 
     @rpc(Integer)
     def delete_class(ctx, iid):
