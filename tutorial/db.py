@@ -61,16 +61,16 @@ class Class(Base):
     __tablename__ = "pascal_dclass"
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
-    number_of_methods = Column(Integer, nullable=False)
-    number_of_properties = Column(Integer, nullable=False)
+    num_of_methods = Column(Integer, nullable=False)
+    num_of_fields = Column(Integer, nullable=False)
 
-    def __init__(self, name, number_of_methods, number_of_properties):
+    def __init__(self, name, num_of_methods, num_of_fields):
         self.name = name
-        self.number_of_methods = number_of_methods
-        self.number_of_properties = number_of_properties
+        self.num_of_methods = num_of_methods
+        self.num_of_fields = num_of_fields
 
     def __repr__(self):
-        return f"<Class({self.name}, {self.number_of_methods}, {self.number_of_properties})>"
+        return f"<Class({self.name}, {self.num_of_methods}, {self.num_of_fields})>"
 
 
 class DB:
@@ -89,8 +89,8 @@ class DB:
         result = [
             {
                 "name": record.name,
-                "number_of_methods": record.number_of_methods,
-                "number_of_properties": record.number_of_properties,
+                "num_of_methods": record.num_of_methods,
+                "num_of_fields": record.num_of_fields,
                 "id": record.id,
             }
             for record in match
@@ -109,8 +109,8 @@ class DB:
             None
         return {
             "name": result.name,
-            "number_of_methods": result.number_of_methods,
-            "number_of_properties": result.number_of_properties,
+            "num_of_methods": result.num_of_methods,
+            "num_of_fields": result.num_of_fields,
             "id": result.id,
         }
 
@@ -138,8 +138,8 @@ class DB:
         session.query(Class).filter(Class.id == iid).update(
             {
                 Class.name: name,
-                Class.number_of_methods: num_of_methods,
-                Class.number_of_properties: num_of_fields,
+                Class.num_of_methods: num_of_methods,
+                Class.num_of_fields: num_of_fields,
             },
             synchronize_session="fetch",
         )
