@@ -3,8 +3,9 @@ import sys
 sys.path.append("../tutorial")
 
 from MyService import Client
-from ttypes import *
 
+# from ttypes import *
+from RestClient import RESTClient
 from PyQt5.QtWidgets import QApplication
 from window import App
 
@@ -29,8 +30,9 @@ try:
     # Create a client to use the protocol encoder
     client_rpc = Client(protocol)
     client_soap = SClient("http://soap.by?WSDL")
+    client_rest = RESTClient("http://localhost:8000")
 
-    App(transport, client_rpc, client_soap)
+    App(transport, client_rpc, client_soap, client_rest)
     # Connect!
     # transport.open()
 
