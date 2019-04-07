@@ -1,5 +1,5 @@
 from rest.pascal.models import DType, DMathOperation, DClass
-from rest_framework import viewsets
+from rest_framework import generics
 from rest.pascal.serializers import (
     TypeSerializer,
     ClassSerializer,
@@ -7,7 +7,7 @@ from rest.pascal.serializers import (
 )
 
 
-class TypeViewSet(viewsets.ModelViewSet):
+class TypeViewList(generics.ListCreateAPIView):
     """
     API endpoint that allows users to be viewed or edited.
     """
@@ -16,7 +16,12 @@ class TypeViewSet(viewsets.ModelViewSet):
     serializer_class = TypeSerializer
 
 
-class ClassViewSet(viewsets.ModelViewSet):
+class TypeViewDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DType.objects.all()
+    serializer_class = TypeSerializer
+
+
+class ClassViewList(generics.ListCreateAPIView):
     """
     API endpoint that allows groups to be viewed or edited.
     """
@@ -25,10 +30,20 @@ class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer
 
 
-class MathOperationViewSet(viewsets.ModelViewSet):
+class ClassViewDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DClass.objects.all()
+    serializer_class = ClassSerializer
+
+
+class MathOperationViewList(generics.ListCreateAPIView):
     """
     API endpoint that allows groups to be viewed or edited.
     """
 
+    queryset = DMathOperation.objects.all()
+    serializer_class = MathOperationSerializer
+
+
+class MathOperationViewDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = DMathOperation.objects.all()
     serializer_class = MathOperationSerializer
