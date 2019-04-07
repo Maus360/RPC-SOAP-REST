@@ -5,16 +5,15 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
 sys.path.append("../tutorial")
-from ttypes import *
+# from ttypes import *
 
 
 class App(QWidget):
-    def __init__(self, transport, client_rpc, client_soap):
+    def __init__(self, transport, client_rpc, client_soap, client_rest):
         super().__init__()
-        self.client = client_rpc
-        self.client_rpc = client_rpc
-        self.client_soap = client_soap.service
+        self.clients = [client_rpc, client_soap.service, client_rest]
         self.transport = transport
+        self.transport.open()
         self.subject = None
         self.title = "Have a nice day!"
         self.left = 10
@@ -31,11 +30,11 @@ class App(QWidget):
                     "Size",
                     "Description",
                 ],
-                "index": self.client.get_type_all,
-                "get": self.client.get_type,
-                "set": self.client.set_type,
-                "reset": self.client.reset_type,
-                "delete": self.client.delete_type,
+                "index": client_rpc.get_type_all,
+                "get": client_rpc.get_type,
+                "set": client_rpc.set_type,
+                "reset": client_rpc.reset_type,
+                "delete": client_rpc.delete_type,
                 "result": lambda record: [
                     record.name,
                     record.min_value,
@@ -47,11 +46,11 @@ class App(QWidget):
             },
             "class": {
                 "fields": ["Name", "Number of methods", "Number of Properties"],
-                "index": self.client.get_class_all,
-                "get": self.client.get_class,
-                "set": self.client.set_class,
-                "reset": self.client.reset_class,
-                "delete": self.client.delete_class,
+                "index": client_rpc.get_class_all,
+                "get": client_rpc.get_class,
+                "set": client_rpc.set_class,
+                "reset": client_rpc.reset_class,
+                "delete": client_rpc.delete_class,
                 "result": lambda record: [
                     record.name,
                     str(record.num_of_methods),
@@ -60,11 +59,11 @@ class App(QWidget):
             },
             "mo": {
                 "fields": ["Name", "Type of argument", "Type of value", "Description"],
-                "index": self.client.get_math_operations_all,
-                "get": self.client.get_math_operation,
-                "set": self.client.set_math_operation,
-                "reset": self.client.reset_math_operation,
-                "delete": self.client.delete_math_operation,
+                "index": client_rpc.get_math_operations_all,
+                "get": client_rpc.get_math_operation,
+                "set": client_rpc.set_math_operation,
+                "reset": client_rpc.reset_math_operation,
+                "delete": client_rpc.delete_math_operation,
                 "result": lambda record: [
                     record.name,
                     record.type_of_argument,
@@ -97,8 +96,11 @@ class App(QWidget):
         self.button_classes.clicked.connect(partial(self.__get_record_all, "class"))
         self.button_mo = QPushButton("Math operations", self)
         self.button_mo.clicked.connect(partial(self.__get_record_all, "mo"))
-        self.button_protocol = QPushButton("RPC->SOAP", self)
-        self.button_protocol.clicked.connect(self.__change_protocol)
+        # self.button_protocol = QPushButton("RPC->SOAP", self)
+        self.button_protocol = QComboBox()
+        self.button_protocol.addItems(["RPC", "SOAP", "REST"])
+        # self.button_protocol.clicked.connect(self.__change_protocol)
+        self.button_protocol.currentIndexChanged.connect(self.__change_protocol)
         self.button_new = QPushButton("New")
         self.button_new.clicked.connect(partial(self.__new_record, False, "type"))
         self.button_search = QPushButton("🔍")
@@ -124,13 +126,66 @@ class App(QWidget):
         }
         funcs[self.subject](search=self.textarea_search.text())
 
-    def __change_protocol(self):
-        if self.client == self.client_rpc:
-            self.button_protocol.setText("SOAP->RPC")
-            self.client = self.client_soap
+    def __change_protocol(self, *args):
+        if args[0] == 0:
+            self.transport.close()
+            self.transport.open()
         else:
-            self.button_protocol.setText("RPC->SOAP")
-            self.client = self.client_rpc
+            self.transport.close()
+        self.funcs = {
+            "type": {
+                "fields": [
+                    "Name",
+                    "Min value",
+                    "Max value",
+                    "Format",
+                    "Size",
+                    "Description",
+                ],
+                "index": self.clients[args[0]].get_type_all,
+                "get": self.clients[args[0]].get_type,
+                "set": self.clients[args[0]].set_type,
+                "reset": self.clients[args[0]].reset_type,
+                "delete": self.clients[args[0]].delete_type,
+                "result": lambda record: [
+                    record.name,
+                    record.min_value,
+                    record.max_value,
+                    record.format_of_value,
+                    str(record.size),
+                    record.description,
+                ],
+            },
+            "class": {
+                "fields": ["Name", "Number of methods", "Number of Properties"],
+                "index": self.clients[args[0]].get_class_all,
+                "get": self.clients[args[0]].get_class,
+                "set": self.clients[args[0]].set_class,
+                "reset": self.clients[args[0]].reset_class,
+                "delete": self.clients[args[0]].delete_class,
+                "result": lambda record: [
+                    record.name,
+                    str(record.num_of_methods),
+                    str(record.num_of_fields),
+                ],
+            },
+            "mo": {
+                "fields": ["Name", "Type of argument", "Type of value", "Description"],
+                "index": self.clients[args[0]].get_math_operations_all,
+                "get": self.clients[args[0]].get_math_operation,
+                "set": self.clients[args[0]].set_math_operation,
+                "reset": self.clients[args[0]].reset_math_operation,
+                "delete": self.clients[args[0]].delete_math_operation,
+                "result": lambda record: [
+                    record.name,
+                    record.type_of_argument,
+                    record.type_of_value,
+                    record.description,
+                ],
+            },
+        }
+
+        self.client = self.clients[args[0]]
 
     def __get_record_all(self, name: str, search=None):
         self.window_layout.removeWidget(self.scroll)
@@ -141,9 +196,7 @@ class App(QWidget):
         self.window_layout.removeWidget(self.scroll)
         self.tableWidget.setColumnCount(0)
         self.tableWidget.setRowCount(0)
-        self.transport.open()
         result = self.funcs[name]["index"]()
-        self.transport.close()
         self.tableWidget.setColumnCount(len(self.funcs[name]["fields"]) + 1)
         self.tableWidget.setHorizontalHeaderLabels(
             self.funcs[name]["fields"] + ["View"]
@@ -176,9 +229,7 @@ class App(QWidget):
     def __get_record(self, name, iid):
         self.window_layout.removeWidget(self.scroll)
         try:
-            self.transport.open()
             result = self.funcs[name]["get"](iid)
-            self.transport.close()
             buttons = QHBoxLayout()
             self.button_edit = QPushButton("Edit")
             self.button_edit.clicked.connect(partial(self.__edit_record, name, iid))
@@ -207,10 +258,8 @@ class App(QWidget):
             self.scroll.setWidgetResizable(True)
             self.window_layout.removeWidget(self.tableWidget)
             self.window_layout.addWidget(self.scroll)
-            print(name, iid)
         except Exception as e:
             logger.error(e)
-            self.transport.close()
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
             msg.setText("Error")
@@ -226,16 +275,13 @@ class App(QWidget):
             "class": [self.client.reset_class, [str, int, int]],
         }
         if submit == True:
-            # print([(index, i.toPlainText()) for index, i in enumerate(self.fields)])
             [field.setReadOnly(True) for field in self.fields]
             try:
                 argv = [
                     funcs[name][1][index](i.toPlainText())
                     for index, i in enumerate(self.fields)
                 ]
-                self.transport.open()
                 funcs[name][0](iid, *argv)
-                self.transport.close()
                 self.__get_record_all(name)
             except Exception as e:
                 logger.error(e)
@@ -259,10 +305,8 @@ class App(QWidget):
             "mo": self.client.delete_math_operation,
             "class": self.client.delete_class,
         }
-        self.transport.open()
         funcs[name](iid)
-        print("delete", name, iid)
-        self.transport.close()
+        logger.debug(f"delete {name}, {iid}")
         self.__get_record_all(name)
 
     def __new_record(self, submit, name, *args):
@@ -279,10 +323,7 @@ class App(QWidget):
                     funcs[name][1][index](i.toPlainText())
                     for index, i in enumerate(self.fields)
                 ]
-                self.transport.open()
-                print(argv)
                 funcs[name][0](*argv)
-                self.transport.close()
                 self.__get_record_all(name)
             except Exception as e:
                 logger.error(e)
@@ -293,7 +334,6 @@ class App(QWidget):
                 msg.setWindowTitle("Error!")
                 msg.exec_()
         else:
-            print(name)
             self.fields = []
             buttons = QHBoxLayout()
             button_submit = QPushButton("Submit")
