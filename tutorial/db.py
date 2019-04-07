@@ -18,7 +18,7 @@ Base = declarative_base()
 
 
 class Type(Base):
-    __tablename__ = "types"
+    __tablename__ = "pascal_dtype"
     id = Column(Integer, primary_key=True)
     name = Column(String(20), nullable=False)
     min_value = Column(String(50), nullable=False)
@@ -40,7 +40,7 @@ class Type(Base):
 
 
 class MathOperations(Base):
-    __tablename__ = "math_operations"
+    __tablename__ = "pascal_dmathoperation"
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
     type_of_argument = Column(String(50), nullable=False)
@@ -58,7 +58,7 @@ class MathOperations(Base):
 
 
 class Class(Base):
-    __tablename__ = "class"
+    __tablename__ = "pascal_dclass"
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
     number_of_methods = Column(Integer, nullable=False)
