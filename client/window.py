@@ -30,6 +30,7 @@ class App(QWidget):
                     "Size",
                     "Description",
                 ],
+                "decorators": [str, str, str, str, int, str],
                 "index": client_rpc.get_type_all,
                 "get": client_rpc.get_type,
                 "set": client_rpc.set_type,
@@ -46,6 +47,7 @@ class App(QWidget):
             },
             "class": {
                 "fields": ["Name", "Number of methods", "Number of Properties"],
+                "decorators": [str, int, int],
                 "index": client_rpc.get_class_all,
                 "get": client_rpc.get_class,
                 "set": client_rpc.set_class,
@@ -59,6 +61,7 @@ class App(QWidget):
             },
             "math_operation": {
                 "fields": ["Name", "Type of argument", "Type of value", "Description"],
+                "decorators": [str, str, str, str],
                 "index": client_rpc.get_math_operations_all,
                 "get": client_rpc.get_math_operation,
                 "set": client_rpc.set_math_operation,
@@ -151,6 +154,7 @@ class App(QWidget):
                     "Size",
                     "Description",
                 ],
+                "decorators": [str, str, str, str, int, str],
                 "index": self.clients[args[0]].get_type_all,
                 "get": self.clients[args[0]].get_type,
                 "set": self.clients[args[0]].set_type,
@@ -167,6 +171,7 @@ class App(QWidget):
             },
             "class": {
                 "fields": ["Name", "Number of methods", "Number of Properties"],
+                "decorators": [str, int, int],
                 "index": self.clients[args[0]].get_class_all,
                 "get": self.clients[args[0]].get_class,
                 "set": self.clients[args[0]].set_class,
@@ -180,6 +185,7 @@ class App(QWidget):
             },
             "math_operation": {
                 "fields": ["Name", "Type of argument", "Type of value", "Description"],
+                "decorators": [str, str, str, str],
                 "index": self.clients[args[0]].get_math_operations_all,
                 "get": self.clients[args[0]].get_math_operation,
                 "set": self.clients[args[0]].set_math_operation,
@@ -279,19 +285,14 @@ class App(QWidget):
             self.__get_record_all(name)
 
     def __edit_record(self, name, iid, submit=False):
-        funcs = {
-            "type": [self.client.reset_type, [str, str, str, str, int, str]],
-            "math_operation": [self.client.reset_math_operation, [str, str, str, str]],
-            "class": [self.client.reset_class, [str, int, int]],
-        }
         if submit == True:
             [field.setReadOnly(True) for field in self.fields]
             try:
                 argv = [
-                    funcs[name][1][index](i.toPlainText())
+                    self.funcs[name]["decorators"][index](i.toPlainText())
                     for index, i in enumerate(self.fields)
                 ]
-                funcs[name][0](iid, *argv)
+                self.funcs[name]["reset"](iid, *argv)
                 self.__get_record_all(name)
             except Exception as e:
                 logger.error(e)
@@ -310,30 +311,20 @@ class App(QWidget):
             )
 
     def __delete_record(self, name, iid):
-        funcs = {
-            "type": self.client.delete_type,
-            "math_operation": self.client.delete_math_operation,
-            "class": self.client.delete_class,
-        }
-        funcs[name](iid)
+        self.funcs[name]["delete"](iid)
         logger.debug(f"delete {name}, {iid}")
         self.__get_record_all(name)
 
     def __new_record(self, submit, name, *args):
-        funcs = {
-            "type": [self.client.set_type, [str, str, str, str, int, str]],
-            "math_operation": [self.client.set_math_operation, [str, str, str, str]],
-            "class": [self.client.set_class, [str, int, int]],
-        }
         self.window_layout.removeWidget(self.scroll)
         self.window_layout.removeWidget(self.tableWidget)
         if submit:
             try:
                 argv = [
-                    funcs[name][1][index](i.toPlainText())
+                    self.funcs[name]["decorators"][index](i.toPlainText())
                     for index, i in enumerate(self.fields)
                 ]
-                funcs[name][0](*argv)
+                self.funcs[name]["set"](*argv)
                 self.__get_record_all(name)
             except Exception as e:
                 logger.error(e)
