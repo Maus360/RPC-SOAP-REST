@@ -12,47 +12,82 @@ class RESTClient:
         self.url = url
 
     def get_type_all(self):
-        return list(map(MyDict, requests.get(url=self.url + "/type").json()))
+        return list(map(MyDict, requests.get(url=self.url + "/type/").json()))
 
     def get_type(self, pk):
-        return MyDict(requests.get(url=self.url + "/type" + f"/{pk}").json())
+        return MyDict(requests.get(url=self.url + "/type" + f"/{pk}/").json())
 
     def set_type(self, *args):
-        pass
+        data = {
+            "name": args[0],
+            "min_value": args[1],
+            "max_value": args[2],
+            "format_of_value": args[3],
+            "size": args[4],
+            "description": args[5],
+        }
+        return MyDict(requests.post(url=self.url + "/type/", data=data).json())
 
     def reset_type(self, pk, *args):
-        pass
+        data = {
+            "name": args[0],
+            "min_value": args[1],
+            "max_value": args[2],
+            "format_of_value": args[3],
+            "size": args[4],
+            "description": args[5],
+        }
+        return MyDict(
+            requests.put(url=self.url + "/type" + f"/{pk}/", data=data).json()
+        )
 
     def delete_type(self, pk):
-        pass
+        requests.delete(url=self.url + "/type" + f"/{pk}/")
 
     def get_math_operations_all(self):
-        return list(map(MyDict, requests.get(url=self.url + "/mathoperation").json()))
+        return list(map(MyDict, requests.get(url=self.url + "/mathoperation/").json()))
 
     def get_math_operation(self, pk):
-        return MyDict(requests.get(url=self.url + "/mathoperation" + f"/{pk}").json())
+        return MyDict(requests.get(url=self.url + "/mathoperation" + f"/{pk}/").json())
 
     def set_math_operation(self, *args):
-        pass
+        data = {
+            "name": args[0],
+            "type_of_argument": args[1],
+            "type_of_value": args[2],
+            "description": args[3],
+        }
+        return MyDict(requests.post(url=self.url + "/mathoperation/", data=data).json())
 
     def reset_math_operation(self, pk, *args):
-        pass
+        data = {
+            "name": args[0],
+            "type_of_argument": args[1],
+            "type_of_value": args[2],
+            "description": args[3],
+        }
+        return MyDict(
+            requests.put(url=self.url + "/mathoperation" + f"/{pk}/", data=data).json()
+        )
 
     def delete_math_operation(self, pk):
-        pass
+        requests.delete(url=self.url + "/mathoperation" + f"/{pk}/")
 
     def get_class_all(self):
-        return list(map(MyDict, requests.get(url=self.url + "/class").json()))
+        return list(map(MyDict, requests.get(url=self.url + "/class/").json()))
 
     def get_class(self, pk):
-        print(pk)
-        return MyDict(requests.get(url=self.url + "/class" + f"/{pk}").json())
+        return MyDict(requests.get(url=self.url + "/class" + f"/{pk}/").json())
 
     def set_class(self, *args):
-        pass
+        data = {"name": args[0], "num_of_methods": args[1], "num_of_fields": args[2]}
+        return MyDict(requests.post(url=self.url + "/class/", data=data).json())
 
     def reset_class(self, pk, *args):
-        pass
+        data = {"name": args[0], "num_of_methods": args[1], "num_of_fields": args[2]}
+        return MyDict(
+            requests.put(url=self.url + "/class" + f"/{pk}/", data=data).json()
+        )
 
     def delete_class(self, pk):
-        pass
+        requests.delete(url=self.url + "/class" + f"/{pk}/")
