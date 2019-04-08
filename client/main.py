@@ -30,7 +30,7 @@ try:
     # Create a client to use the protocol encoder
     client_rpc = Client(protocol)
     client_soap = SClient("http://soap.by?WSDL")
-    client_rest = RESTClient("http://localhost:8000")
+    client_rest = RESTClient("http://rest.by")
 
     App(transport, client_rpc, client_soap, client_rest)
     # Connect!

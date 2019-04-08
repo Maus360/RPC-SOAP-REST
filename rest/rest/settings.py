@@ -25,7 +25,7 @@ SECRET_KEY = "z73y_3$#lurq^pd-4phy#cfi7@$cs5&3_cv$xg8tbzb94u(*a8"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["rest.by"]
 
 
 # Application definition
