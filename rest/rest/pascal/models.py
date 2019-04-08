@@ -4,7 +4,7 @@ from django.db import models
 
 
 class DType(models.Model):
-    id = models.IntegerField(primary_key=True)
+    # id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=20)
     min_value = models.CharField(max_length=50)
     max_value = models.CharField(max_length=50)
@@ -17,7 +17,7 @@ class DType(models.Model):
 
 
 class DMathOperation(models.Model):
-    id = models.IntegerField(primary_key=True)
+    # id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=200)
     type_of_argument = models.CharField(max_length=50)
     type_of_value = models.CharField(max_length=50)
@@ -28,7 +28,7 @@ class DMathOperation(models.Model):
 
 
 class DClass(models.Model):
-    id = models.IntegerField(primary_key=True)
+    # id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=200)
     num_of_methods = models.IntegerField()
     num_of_fields = models.IntegerField()
