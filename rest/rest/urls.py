@@ -18,6 +18,12 @@ from django.urls import include, path
 from rest_framework import routers
 from rest.pascal import views
 
+router = routers.DefaultRouter(trailing_slash=True)
+router.register(r"class", views.ClassViewSet)
+router.register(r"type", views.TypeViewSet)
+router.register(r"mathoperation", views.MathOperationViewSet)
+
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
-urlpatterns = [path("admin/", admin.site.urls), path("", include("rest.pascal.urls"))]
+urlpatterns = [path("admin/", admin.site.urls)]
+urlpatterns += router.urls
