@@ -12,7 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from config.config import config
+from .config.config import config
 
 Base = declarative_base()
 
