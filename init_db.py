@@ -1,5 +1,8 @@
+import sys
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import sessionmaker
+
+sys.path.append("./tutorial")
 from tutorial.config.config import config
 from tutorial.db import *
 
