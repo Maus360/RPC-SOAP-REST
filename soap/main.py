@@ -296,5 +296,11 @@ handler = logging.FileHandler(
 )
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+from wsgiref.simple_server import make_server
+
+server = make_server(
+    server_config["soap"]["host"], server_config["soap"]["port"], wsgi_app
+)
 logger.info(f"Start SOAP server")
 print(f"Start SOAP server")
+server.serve_forever()
