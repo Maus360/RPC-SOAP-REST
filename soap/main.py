@@ -13,8 +13,6 @@ from sqlalchemy import create_engine
 from config.config import server_config
 from stypes import *
 
-from gunicorn.app.base import Application as GApplication
-
 
 class HelloWorldService(ServiceBase):
     @rpc(_returns=Array(ThClass))
