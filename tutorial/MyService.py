@@ -5,6 +5,7 @@
 #
 #  options string: py
 #
+import os
 import logging
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 from ttypes import *
@@ -31,7 +32,11 @@ class Iface:
             formatter = logging.Formatter(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
             )
-            handler = logging.FileHandler("log/out.log")
+            if not os.path.isdir(os.path.join(os.getcwd(), "log")):
+                os.makedirs(os.path.join(os.getcwd(), "log"))
+            handler = logging.FileHandler(
+        os.path.join(os.path.join(os.getcwd(), "log"), "out.log")
+    )
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
         else:

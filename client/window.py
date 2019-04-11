@@ -1,4 +1,5 @@
 import sys
+import os
 import logging
 from functools import partial
 from PyQt5.QtWidgets import *
@@ -376,6 +377,10 @@ logger = logging.getLogger("CLIENT")
 logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler = logging.FileHandler("/home/maus/bsuir/3/AiPOSiZI/rpc-soap/client/log/out.log")
+if not os.path.isdir(os.path.join(os.getcwd(), "log")):
+    os.makedirs(os.path.join(os.getcwd(), "log"))
+handler = logging.FileHandler(
+        os.path.join(os.path.join(os.getcwd(), "log"), "out.log")
+    )
 handler.setFormatter(formatter)
 logger.addHandler(handler)

@@ -1,3 +1,4 @@
+import os
 import sys
 import logging
 from spyne import Application, rpc, ServiceBase, Integer, Unicode, Array
@@ -269,27 +270,6 @@ application = Application(
 )
 
 
-class StandaloneApplication(GApplication):
-    def __init__(self, app, options=None):
-        self.options = options or {}
-        self.application = app
-        super(StandaloneApplication, self).__init__()
-
-    def load_config(self):
-        config = dict(
-            [
-                (key, value)
-                for key, value in self.options.items()
-                if key in self.cfg.settings and value is not None
-            ]
-        )
-        for key, value in config.items():
-            self.cfg.set(key.lower(), value)
-
-    def load(self):
-        return self.application
-
-
 wsgi_app = WsgiApplication(application)
 
 
@@ -298,28 +278,24 @@ wsgi_app = WsgiApplication(application)
 # supposed to use it in production.
 # from wsgiref.simple_server import make_server
 
+sys.path.append(os.getcwd())
+
 database = DB()
 
 logger = logging.getLogger("SOAP")
 logger.setLevel(logging.INFO)
 
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler = logging.FileHandler("/home/maus/bsuir/3/AiPOSiZI/rpc-soap/soap/log/out.log")
+
+if not os.path.exists(os.path.join(os.path.dirname(os.path.realpath(__file__)), "log")):
+    os.makedirs(os.path.join(os.path.dirname(os.path.realpath(__file__)), "log"))
+handler = logging.FileHandler(
+    os.path.join(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "log"), "out.log"
+    )
+)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info(
     f"Start server at {server_config['soap']['host']}:{server_config['soap']['port']}"
 )
-# server = make_server("127.0.0.1", 8000, wsgi_app)
-# server = make_server(
-#     server_config["soap"]["host"], server_config["soap"]["port"], wsgi_app
-# )
-# Application.run(wsgi_app)
-options = {"bind": f'{server_config["soap"]["host"]}:{server_config["soap"]["port"]}'}
-# logger.info(
-#     f"Start server at {server_config['soap']['host']}:{server_config['soap']['port']}"
-# )
-# StandaloneApplication(wsgi_app, options).run()
-
-# server.serve_forever()
-
