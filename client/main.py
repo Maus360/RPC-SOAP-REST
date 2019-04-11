@@ -1,5 +1,7 @@
 import sys
 
+from config_client import config
+
 sys.path.append("../tutorial")
 
 from MyService import Client
@@ -19,7 +21,7 @@ from zeep import Client as SClient
 try:
 
     # Make socket
-    transport = TSocket.TSocket("127.0.0.1", 90)
+    transport = TSocket.TSocket(config["rpc"]["host"], config["rpc"]["port"])
 
     # Buffering is critical. Raw sockets are very slow
     transport = TTransport.TBufferedTransport(transport)
@@ -29,8 +31,8 @@ try:
 
     # Create a client to use the protocol encoder
     client_rpc = Client(protocol)
-    client_soap = SClient("http://soap.by?WSDL")
-    client_rest = RESTClient("http://rest.by")
+    client_soap = SClient(config["soap"]["url"])
+    client_rest = RESTClient(config["rest"]["url"])
 
     App(transport, client_rpc, client_soap, client_rest)
     # Connect!
@@ -44,4 +46,3 @@ try:
 
 except Thrift.TException as tx:
     print("%s" % (tx.message))
-
