@@ -45,6 +45,7 @@ class Iface:
         self.logger.info(
             f"Start server at {server_config['rpc']['host']}:{server_config['rpc']['port']}"
         )
+        print(f"Start server at {server_config['rpc']['host']}:{server_config['rpc']['port']}")
     def get_class_all(self):
         self.logger.info("Called method get_class_all")
         match = self.database.get_class_all()

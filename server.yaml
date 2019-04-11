@@ -1,6 +1,6 @@
 soap:
   host: 127.0.0.1
-  port: 8000
+  port: 80
 rpc:
   host: 127.0.0.1
   port: 9090

@@ -296,6 +296,5 @@ handler = logging.FileHandler(
 )
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-logger.info(
-    f"Start server at {server_config['soap']['host']}:{server_config['soap']['port']}"
-)
+logger.info(f"Start SOAP server")
+print(f"Start SOAP server")
