@@ -12,10 +12,14 @@ sys.path.append("../tutorial")
 class App(QWidget):
     def __init__(self, transport, client_rpc, client_soap, client_rest):
         super().__init__()
-        self.clients = [client_rpc, client_soap.service, client_rest]
+        self.clients = (
+            [client_rpc, client_soap.service, client_rest]
+            if client_soap
+            else [client_rpc, None, client_rest]
+        )
         self.transport = transport
         self.transport.open()
-        self.subject = None
+        self.subject = "type"
         self.title = "Have a nice day!"
         self.left = 10
         self.top = 10
@@ -131,77 +135,87 @@ class App(QWidget):
         self.h_box.setLayout(layout)
 
     def __search(self):
-        funcs = {
-            None: partial(self.__get_record_all, "type"),
-            "type": partial(self.__get_record_all, "type"),
-            "math_operation": partial(self.__get_record_all, "math_operation"),
-            "class": partial(self.__get_record_all, "class"),
-        }
-        funcs[self.subject](search=self.textarea_search.text())
+        self.__get_record_all(search=self.textarea_search.text())
 
     def __change_protocol(self, *args):
-        if args[0] == 0:
-            self.transport.close()
-            self.transport.open()
+        print(self.clients[args[0]], self.transport)
+        if self.clients[args[0]] is None:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("Error")
+            msg.setInformativeText("This service is unavailable")
+            msg.setWindowTitle("Error!")
+            msg.exec_()
+            self.button_protocol.setCurrentIndex(0)
+            self.__get_record_all()
         else:
-            self.transport.close()
-        self.funcs = {
-            "type": {
-                "fields": [
-                    "Name",
-                    "Min value",
-                    "Max value",
-                    "Format",
-                    "Size",
-                    "Description",
-                ],
-                "decorators": [str, str, str, str, int, str],
-                "index": self.clients[args[0]].get_type_all,
-                "get": self.clients[args[0]].get_type,
-                "set": self.clients[args[0]].set_type,
-                "reset": self.clients[args[0]].reset_type,
-                "delete": self.clients[args[0]].delete_type,
-                "result": lambda record: [
-                    record.name,
-                    record.min_value,
-                    record.max_value,
-                    record.format_of_value,
-                    str(record.size),
-                    record.description,
-                ],
-            },
-            "class": {
-                "fields": ["Name", "Number of methods", "Number of Properties"],
-                "decorators": [str, int, int],
-                "index": self.clients[args[0]].get_class_all,
-                "get": self.clients[args[0]].get_class,
-                "set": self.clients[args[0]].set_class,
-                "reset": self.clients[args[0]].reset_class,
-                "delete": self.clients[args[0]].delete_class,
-                "result": lambda record: [
-                    record.name,
-                    str(record.num_of_methods),
-                    str(record.num_of_fields),
-                ],
-            },
-            "math_operation": {
-                "fields": ["Name", "Type of argument", "Type of value", "Description"],
-                "decorators": [str, str, str, str],
-                "index": self.clients[args[0]].get_math_operations_all,
-                "get": self.clients[args[0]].get_math_operation,
-                "set": self.clients[args[0]].set_math_operation,
-                "reset": self.clients[args[0]].reset_math_operation,
-                "delete": self.clients[args[0]].delete_math_operation,
-                "result": lambda record: [
-                    record.name,
-                    record.type_of_argument,
-                    record.type_of_value,
-                    record.description,
-                ],
-            },
-        }
+            if args[0] == 0:
+                self.transport.close()
+                self.transport.open()
+            else:
+                self.transport.close()
+            self.funcs = {
+                "type": {
+                    "fields": [
+                        "Name",
+                        "Min value",
+                        "Max value",
+                        "Format",
+                        "Size",
+                        "Description",
+                    ],
+                    "decorators": [str, str, str, str, int, str],
+                    "index": self.clients[args[0]].get_type_all,
+                    "get": self.clients[args[0]].get_type,
+                    "set": self.clients[args[0]].set_type,
+                    "reset": self.clients[args[0]].reset_type,
+                    "delete": self.clients[args[0]].delete_type,
+                    "result": lambda record: [
+                        record.name,
+                        record.min_value,
+                        record.max_value,
+                        record.format_of_value,
+                        str(record.size),
+                        record.description,
+                    ],
+                },
+                "class": {
+                    "fields": ["Name", "Number of methods", "Number of Properties"],
+                    "decorators": [str, int, int],
+                    "index": self.clients[args[0]].get_class_all,
+                    "get": self.clients[args[0]].get_class,
+                    "set": self.clients[args[0]].set_class,
+                    "reset": self.clients[args[0]].reset_class,
+                    "delete": self.clients[args[0]].delete_class,
+                    "result": lambda record: [
+                        record.name,
+                        str(record.num_of_methods),
+                        str(record.num_of_fields),
+                    ],
+                },
+                "math_operation": {
+                    "fields": [
+                        "Name",
+                        "Type of argument",
+                        "Type of value",
+                        "Description",
+                    ],
+                    "decorators": [str, str, str, str],
+                    "index": self.clients[args[0]].get_math_operations_all,
+                    "get": self.clients[args[0]].get_math_operation,
+                    "set": self.clients[args[0]].set_math_operation,
+                    "reset": self.clients[args[0]].reset_math_operation,
+                    "delete": self.clients[args[0]].delete_math_operation,
+                    "result": lambda record: [
+                        record.name,
+                        record.type_of_argument,
+                        record.type_of_value,
+                        record.description,
+                    ],
+                },
+            }
 
-        self.client = self.clients[args[0]]
+            self.client = self.clients[args[0]]
 
     def __get_record_all(self, search=None):
         self.window_layout.removeWidget(self.scroll)
@@ -379,8 +393,6 @@ logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 if not os.path.isdir(os.path.join(os.getcwd(), "log")):
     os.makedirs(os.path.join(os.getcwd(), "log"))
-handler = logging.FileHandler(
-        os.path.join(os.path.join(os.getcwd(), "log"), "out.log")
-    )
+handler = logging.FileHandler(os.path.join(os.path.join(os.getcwd(), "log"), "out.log"))
 handler.setFormatter(formatter)
 logger.addHandler(handler)

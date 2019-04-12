@@ -19,20 +19,28 @@ from thrift.protocol import TBinaryProtocol
 from zeep import Client as SClient
 
 try:
-
-    # Make socket
-    transport = TSocket.TSocket(config["rpc"]["host"], config["rpc"]["port"])
-
-    # Buffering is critical. Raw sockets are very slow
-    transport = TTransport.TBufferedTransport(transport)
-
-    # Wrap in a protocol
-    protocol = TBinaryProtocol.TBinaryProtocol(transport)
-
     # Create a client to use the protocol encoder
-    client_rpc = Client(protocol)
-    client_soap = SClient(config["soap"]["url"])
-    client_rest = RESTClient(config["rest"]["url"])
+    try:
+        transport = TSocket.TSocket(config["rpc"]["host"], config["rpc"]["port"])
+
+        # Buffering is critical. Raw sockets are very slow
+        transport = TTransport.TBufferedTransport(transport)
+
+        # Wrap in a protocol
+        protocol = TBinaryProtocol.TBinaryProtocol(transport)
+        client_rpc = Client(protocol)
+        transport.open()
+        transport.close()
+    except:
+        client_rpc = None
+    try:
+        client_soap = SClient(config["soap"]["url"])
+    except:
+        client_soap = None
+    try:
+        client_rest = RESTClient(config["rest"]["url"])
+    except:
+        client_rest = None
 
     App(transport, client_rpc, client_soap, client_rest)
     # Connect!
